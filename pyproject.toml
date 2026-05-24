@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "bedrock-rag-watchdog"
+version = "0.1.0"
+description = "Bedrock AgentCore agent that monitors RAG drift and pushes metrics to Datadog via MCP. Built for AWS + Datadog GenAI Hackathon 2026."
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "boto3>=1.35",
+    "datadog-api-client>=2.26",
+    "ragdrift>=0.1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "moto[bedrock]>=5.0"]
+
+[project.scripts]
+bedrock-rag-watchdog = "bedrock_rag_watchdog.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bedrock_rag_watchdog"]
