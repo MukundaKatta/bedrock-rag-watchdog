@@ -42,5 +42,5 @@ bedrock-rag-watchdog
 ## Tests
 
 ```bash
-pytest src/  # 17 tests, all offline
+pytest src/  # 30 tests, all offline
 ```

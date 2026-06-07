@@ -1,7 +1,10 @@
 """Tests for SageMaker module — all offline (stub mode)."""
 
-import pytest
-from ..sagemaker import submit_finetune_job, write_baseline_manifest, read_baseline_manifest
+from ..sagemaker import (
+    submit_finetune_job,
+    write_baseline_manifest,
+    read_baseline_manifest,
+)
 
 
 def test_submit_finetune_stub_returns_completed():
@@ -29,6 +32,7 @@ def test_submit_finetune_job_name_prefix():
 
 def test_write_baseline_manifest_stub():
     from ..sagemaker import FineTuneJob
+
     job = FineTuneJob(
         job_name="test-job",
         model_artifact_uri="s3://bucket/model.tar.gz",
@@ -50,7 +54,14 @@ def test_read_baseline_manifest_stub_returns_dict():
 
 def test_read_baseline_manifest_stub_has_expected_keys():
     manifest = read_baseline_manifest("bucket", stub=True)
-    expected = {"job_name", "model_artifact_uri", "baseline_drift_mean", "baseline_drift_std", "written_at", "version"}
+    expected = {
+        "job_name",
+        "model_artifact_uri",
+        "baseline_drift_mean",
+        "baseline_drift_std",
+        "written_at",
+        "version",
+    }
     assert expected.issubset(set(manifest.keys()))
 
 

@@ -26,7 +26,7 @@ def main() -> None:
     agent = WatchdogAgent(cfg)
     report = agent.run()
 
-    print(f"Drift dimensions:")
+    print("Drift dimensions:")
     for k, v in report.dimensions.as_dict().items():
         flag = " <-- ALERT" if v >= cfg.drift_threshold else ""
         print(f"  {k:20s}: {v:.4f}{flag}")
@@ -39,7 +39,9 @@ def main() -> None:
     else:
         print("No incident (all dimensions within threshold).")
 
-    print(f"\nFull report:\n{json.dumps({'exceeded': report.exceeded_threshold, 'dims': report.dimensions.as_dict(), 'incident': report.incident_url}, indent=2)}")
+    print(
+        f"\nFull report:\n{json.dumps({'exceeded': report.exceeded_threshold, 'dims': report.dimensions.as_dict(), 'incident': report.incident_url}, indent=2)}"
+    )
 
 
 if __name__ == "__main__":

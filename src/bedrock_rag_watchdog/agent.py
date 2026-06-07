@@ -17,10 +17,15 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from .drift import DriftDimensions, RetrievalTrace, compute_drift
-from .datadog_push import DatadogConfig, MetricPoint, create_incident_if_needed, push_metrics
+from .datadog_push import (
+    DatadogConfig,
+    MetricPoint,
+    create_incident_if_needed,
+    push_metrics,
+)
 
 
 @dataclass
@@ -66,13 +71,16 @@ class WatchdogAgent:
             return []
         try:
             import boto3
+
             s3 = boto3.client("s3", region_name=self.cfg.bedrock_region)
             objects = s3.list_objects_v2(
                 Bucket=self.cfg.s3_bucket, Prefix=self.cfg.s3_prefix
             ).get("Contents", [])
             traces = []
             for obj in sorted(objects, key=lambda o: o["LastModified"])[-100:]:
-                body = s3.get_object(Bucket=self.cfg.s3_bucket, Key=obj["Key"])["Body"].read()
+                body = s3.get_object(Bucket=self.cfg.s3_bucket, Key=obj["Key"])[
+                    "Body"
+                ].read()
                 data = json.loads(body)
                 traces.append(RetrievalTrace(**data))
             return traces
@@ -82,7 +90,9 @@ class WatchdogAgent:
 
     def _build_summary(self, dims: DriftDimensions) -> str:
         """Ask Claude on Bedrock to write a drift summary (stub: template)."""
-        exceeded = [k for k, v in dims.as_dict().items() if v >= self.cfg.drift_threshold]
+        exceeded = [
+            k for k, v in dims.as_dict().items() if v >= self.cfg.drift_threshold
+        ]
         if not exceeded:
             return "RAG pipeline is operating within normal drift bounds."
 
@@ -98,7 +108,10 @@ class WatchdogAgent:
 
         try:
             import boto3
-            bedrock = boto3.client("bedrock-runtime", region_name=self.cfg.bedrock_region)
+
+            bedrock = boto3.client(
+                "bedrock-runtime", region_name=self.cfg.bedrock_region
+            )
             prompt = (
                 f"You are an on-call SRE. Summarize this RAG drift report in one paragraph "
                 f"for a non-technical stakeholder. Dimensions exceeded: {exceeded}. "
@@ -108,11 +121,13 @@ class WatchdogAgent:
                 modelId=self.cfg.bedrock_model_id,
                 contentType="application/json",
                 accept="application/json",
-                body=json.dumps({
-                    "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": 256,
-                    "messages": [{"role": "user", "content": prompt}],
-                }),
+                body=json.dumps(
+                    {
+                        "anthropic_version": "bedrock-2023-05-31",
+                        "max_tokens": 256,
+                        "messages": [{"role": "user", "content": prompt}],
+                    }
+                ),
             )
             body = json.loads(response["body"].read())
             return body["content"][0]["text"]
@@ -142,13 +157,16 @@ class WatchdogAgent:
         if not traces:
             # Generate synthetic traces for demo/smoke-test
             import math
+
             traces = [
                 RetrievalTrace(
                     query_embedding=[math.sin(i * 0.1)] * 32,
-                    retrieved_embeddings=[[math.cos(i * 0.1 + j * 0.05)] * 32 for j in range(3)],
+                    retrieved_embeddings=[
+                        [math.cos(i * 0.1 + j * 0.05)] * 32 for j in range(3)
+                    ],
                     response_text=f"Answer {i}: The retrieved context shows relevant information about the query.",
                     latency_ms=120.0 + i * 5,
-                    retrieved_doc_ids=[f"doc_{i}", f"doc_{i+1}", f"doc_{i+2}"],
+                    retrieved_doc_ids=[f"doc_{i}", f"doc_{i + 1}", f"doc_{i + 2}"],
                     relevance_scores=[0.9 - i * 0.05, 0.8 - i * 0.03, 0.7],
                 )
                 for i in range(10)

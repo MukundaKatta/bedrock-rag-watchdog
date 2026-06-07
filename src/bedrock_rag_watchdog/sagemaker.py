@@ -72,7 +72,12 @@ def submit_finetune_job(
         InputDataConfig=[
             {
                 "ChannelName": "train",
-                "DataSource": {"S3DataSource": {"S3DataType": "S3Prefix", "S3Uri": training_data_s3}},
+                "DataSource": {
+                    "S3DataSource": {
+                        "S3DataType": "S3Prefix",
+                        "S3Uri": training_data_s3,
+                    }
+                },
             }
         ],
         OutputDataConfig={"S3OutputPath": output_s3},

@@ -42,7 +42,10 @@ class TestComputeDrift:
         assert d.embedding_drift < 0.01
 
     def test_diverse_traces_higher_drift(self):
-        traces = [make_trace(i, latency_ms=100 + i * 50, response=f"answer {i} {i*i}") for i in range(10)]
+        traces = [
+            make_trace(i, latency_ms=100 + i * 50, response=f"answer {i} {i * i}")
+            for i in range(10)
+        ]
         d = compute_drift(traces)
         # Should have some measurable drift
         assert d.max() >= 0.0
@@ -68,7 +71,13 @@ class TestComputeDrift:
     def test_dim_dict_keys(self):
         d = compute_drift([make_trace(0)])
         keys = set(d.as_dict().keys())
-        assert keys == {"embedding_drift", "retrieval_drift", "response_drift", "latency_drift", "coverage_drift"}
+        assert keys == {
+            "embedding_drift",
+            "retrieval_drift",
+            "response_drift",
+            "latency_drift",
+            "coverage_drift",
+        }
 
     def test_dim_values_non_negative(self):
         traces = [make_trace(i) for i in range(8)]
@@ -103,6 +112,7 @@ class TestComputeDrift:
 class TestWatchdogAgent:
     def test_smoke_run_stub_mode(self):
         from ..agent import WatchdogAgent, WatchdogConfig
+
         cfg = WatchdogConfig(stub=True, drift_threshold=0.15)
         agent = WatchdogAgent(cfg)
         report = agent.run()
@@ -112,7 +122,7 @@ class TestWatchdogAgent:
 
     def test_report_exceeded_threshold_flag(self):
         from ..agent import WatchdogAgent, WatchdogConfig
-        from ..drift import RetrievalTrace
+
         # Force high latency drift
         high_lat = [make_trace(i, latency_ms=2000.0) for i in range(5)]
         base_lat = [make_trace(i, latency_ms=100.0) for i in range(5)]
@@ -124,6 +134,7 @@ class TestWatchdogAgent:
 
     def test_report_no_incident_below_threshold(self):
         from ..agent import WatchdogAgent, WatchdogConfig
+
         # All identical traces → low drift
         traces = [make_trace(0) for _ in range(5)]
         cfg = WatchdogConfig(stub=True, drift_threshold=0.99)
@@ -135,6 +146,7 @@ class TestWatchdogAgent:
 
     def test_incident_created_when_exceeded_stub(self):
         from ..agent import WatchdogAgent, WatchdogConfig
+
         # Use synthetic traces with very high latency
         high = [make_trace(i, latency_ms=5000.0) for i in range(5)]
         base = [make_trace(i, latency_ms=10.0) for i in range(5)]
@@ -147,6 +159,7 @@ class TestWatchdogAgent:
 
     def test_synthetic_traces_used_when_none_provided(self):
         from ..agent import WatchdogAgent, WatchdogConfig
+
         cfg = WatchdogConfig(stub=True)
         agent = WatchdogAgent(cfg)
         # No traces, no S3 → uses synthetic

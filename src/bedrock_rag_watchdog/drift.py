@@ -22,6 +22,7 @@ from typing import List, Optional
 @dataclass
 class RetrievalTrace:
     """Single retrieval event captured from your RAG pipeline."""
+
     query_embedding: List[float]
     retrieved_embeddings: List[List[float]]
     response_text: str
@@ -115,18 +116,26 @@ def compute_drift(
             baseline_emb = statistics.mean(base_dists) if base_dists else current_emb
             d.embedding_drift = abs(current_emb - baseline_emb)
         else:
-            d.embedding_drift = statistics.stdev(emb_dists) if len(emb_dists) > 1 else 0.0
+            d.embedding_drift = (
+                statistics.stdev(emb_dists) if len(emb_dists) > 1 else 0.0
+            )
 
     # ── retrieval drift (NDCG) ───────────────────────────────────────────────
     ndcg_scores = [_ndcg(t.relevance_scores) for t in current if t.relevance_scores]
     if ndcg_scores:
         current_ndcg = statistics.mean(ndcg_scores)
         if baseline:
-            base_ndcg_scores = [_ndcg(t.relevance_scores) for t in baseline if t.relevance_scores]
-            base_ndcg = statistics.mean(base_ndcg_scores) if base_ndcg_scores else current_ndcg
+            base_ndcg_scores = [
+                _ndcg(t.relevance_scores) for t in baseline if t.relevance_scores
+            ]
+            base_ndcg = (
+                statistics.mean(base_ndcg_scores) if base_ndcg_scores else current_ndcg
+            )
             d.retrieval_drift = abs(base_ndcg - current_ndcg)
         else:
-            d.retrieval_drift = statistics.stdev(ndcg_scores) if len(ndcg_scores) > 1 else 0.0
+            d.retrieval_drift = (
+                statistics.stdev(ndcg_scores) if len(ndcg_scores) > 1 else 0.0
+            )
 
     # ── response drift (Jaccard) ─────────────────────────────────────────────
     texts = [t.response_text for t in current]
@@ -146,11 +155,17 @@ def compute_drift(
         p95_current = sorted(latencies)[int(len(latencies) * 0.95)]
         if baseline:
             base_lat = [t.latency_ms for t in baseline]
-            p95_base = sorted(base_lat)[int(len(base_lat) * 0.95)] if base_lat else p95_current
+            p95_base = (
+                sorted(base_lat)[int(len(base_lat) * 0.95)] if base_lat else p95_current
+            )
             d.latency_drift = abs(p95_current - p95_base) / max(p95_base, 1.0)
         else:
             mean_lat = statistics.mean(latencies)
-            d.latency_drift = statistics.stdev(latencies) / max(mean_lat, 1.0) if len(latencies) > 1 else 0.0
+            d.latency_drift = (
+                statistics.stdev(latencies) / max(mean_lat, 1.0)
+                if len(latencies) > 1
+                else 0.0
+            )
 
     # ── coverage drift ───────────────────────────────────────────────────────
     current_docs = {doc for t in current for doc in t.retrieved_doc_ids}
@@ -158,7 +173,9 @@ def compute_drift(
         base_docs = {doc for t in baseline for doc in t.retrieved_doc_ids}
         all_docs = current_docs | base_docs
         if all_docs:
-            d.coverage_drift = len(base_docs.symmetric_difference(current_docs)) / len(all_docs)
+            d.coverage_drift = len(base_docs.symmetric_difference(current_docs)) / len(
+                all_docs
+            )
     else:
         # Measure coverage breadth vs. first-trace baseline
         per_trace_docs = [set(t.retrieved_doc_ids) for t in current]
