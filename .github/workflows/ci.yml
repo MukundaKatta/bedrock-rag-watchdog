@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      # Install the package itself without its runtime dependencies. The test
+      # suite runs entirely in offline "stub" mode, and heavy/cloud SDKs
+      # (boto3, datadog-api-client, ragdrift) are imported lazily inside
+      # functions, so they are not needed to import the package or run tests.
+      - name: Install package (no runtime deps)
+        run: pip install --no-deps -e .
+
+      - name: Install test tooling
+        run: pip install pytest
+
+      - name: Run tests
+        run: pytest -q src/bedrock_rag_watchdog/tests
